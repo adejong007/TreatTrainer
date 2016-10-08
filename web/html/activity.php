@@ -17,17 +17,21 @@
         </span>
       </div>
       <div id="content">
+        <?php
+	class MyDB extends SQLite3
+	{
+    	  function __construct()
+    	  {
+            $this->open('/var/www/databases/barkActivity.db',SQLITE3_OPEN_READONLY);
+          }
+        }
 
-        <div>
-          <?php
-	    $db = new SQLite3('/var/www/database/barkActivity.db');
+	$db = new MyDB();
 
-	    $results = $db->query('SELECT bar FROM foo');
-	    while ($row = $results->fetchArray()) {
-    	      var_dump($row);
-	    }
-
-	  ?>
+	$result = $db->query('SELECT * FROM sessions ORDER BY duration, btime');
+	$row = $result->fetchArray();
+        var_dump($row);	
+	?>
         </div>
       </div>
     </div>

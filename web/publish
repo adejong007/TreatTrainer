@@ -2,10 +2,11 @@
 #
 # Copies web files and preprocesses a specified Sass stylesheet (.scss) into the web directory
 
+sourceDir=~/TreatTrainer/web
 webDir=/var/www/html
 styleDir=$webDir/style
 
-
+cd $sourceDir
 # Copy web files (html directory)
 cp ./html/* $webDir
 
@@ -14,7 +15,6 @@ cp ./html/* $webDir
 cd sass
 for f in *.scss
 do
-    echo $f
     sass $f $styleDir/${f%.*}.css
 done
 
