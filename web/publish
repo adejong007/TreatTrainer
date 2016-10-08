@@ -1,0 +1,20 @@
+#!/bin/bash
+#
+# Copies web files and preprocesses a specified Sass stylesheet (.scss) into the web directory
+
+webDir=/var/www/html
+styleDir=$webDir/style
+
+
+# Copy web files (html directory)
+cp ./html/* $webDir
+
+# Preprocess Sass stylesheet into web directory
+# To make this easier, step into sass directory
+cd sass
+for f in *.scss
+do
+    echo $f
+    sass $f $styleDir/${f%.*}.css
+done
+
