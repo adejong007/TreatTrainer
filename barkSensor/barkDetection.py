@@ -1,5 +1,7 @@
 #!/usr/bin/env python
+#
 # This program is used to detect dog barking from a USB microphone
+#
 # Copyright 2016, Andrew DeJong, andrew.dejong5@gmail.com
 # This software is is distributed under the terms of the full GNU General Public License
 #
@@ -7,10 +9,13 @@
 # Benjamin Chodroff benjamin.chodroff@gmail.com
 
 import pyaudio
+import sqlite3
 from numpy import zeros,linspace,short,fromstring,hstack,transpose,log
 from scipy import fft
 from time import sleep
 
+
+# BARK DETECTION VARIABLES
 #Volume Sensitivity, 0.05: Extremely Sensitive, may give false alarms
 #             0.1: Probably Ideal volume
 #             1: Poorly sensitive, will only go off for relatively loud
@@ -19,10 +24,16 @@ SENSITIVITY= 1
 TONE = 1500
 #Bandwidth for detection (i.e., detect frequencies +- within this margin of error of the TONE)
 BANDWIDTH = 500
-#How many 46ms blips before we declare a beep? (Set frequencyoutput to True if you need to determine how many blips are found, then subtract some)
-beeplength=8
-# How many beeps before we declare an alarm? (Avoids false alarms)
-alarmlength=5
+#How many 46ms blips before we declare a bark?
+barklength=3
+# How many clear blips before we reset session detection
+maxBarkGap=30
+# How long of consistent barking defines a session
+minSessionTime=10
+# How long of silense until session is over
+minQuiteTime=5
+# How long after a reward until another reward is possible
+rewardCooldown=300
 # How many false 46ms blips before we declare there are no more beeps? (May need to be increased if there are expected long pauses between beeps) 
 resetlength=10
 # How many reset counts until we clear an active alarm? (Keep the alarm active even if we don't hear this many beeps)
@@ -32,7 +43,7 @@ debug=True
 # Show the most intense frequency detected (useful for configuration of the frequency and beep lengths)
 frequencyoutput=True
 
-print("Initialized.")
+print("Opening audio stream...")
 # Audio Sampler
 NUM_SAMPLES = 2048
 SAMPLING_RATE = 48000
@@ -43,11 +54,25 @@ _stream = pa.open(format=pyaudio.paInt16,
                   input_device_index=2,
                   frames_per_buffer=NUM_SAMPLES)
 
+print("Opening SQLite database...")
+sqconn=sqlite3.connect('../web/db/barkActivity.db')
+sqcurs=sqconn.cursor()
+print("Last entry: ")
+for row in sqcurs.execute("SELECT * FROM sessions WHERE bdate = (SELECT MAX(bdate) FROM sessions) ORDER BY btime DESC LIMIT 1"):
+    print(row)
+
+sqconn.close()
+
 print("Alarm detector working. Press CTRL-C to quit.")
 
-blipcount=0
-beepcount=0
+barkcount=0
 resetcount=0
+barkGap=0
+inSession=False
+sessionStart=0
+lastReward=0
+
+beepcount=0
 clearcount=0
 alarm=False
 
@@ -72,14 +97,20 @@ while True:
     if max(intensity[(frequencies < TONE+BANDWIDTH) & (frequencies > TONE-BANDWIDTH )]) > max(intensity[(frequencies < TONE-1000) & (frequencies > TONE-2000)]) + SENSITIVITY:
         if frequencyoutput:
             print "\t\t\t\tfreq=",thefreq
-        blipcount+=1
+        barkcount+=1
+	#if this is the first blip, check barkgap
+        if resetcount!=0:
+            thisBark=time.perf_counter()
+	    #if gap is big, then this is the beginning of session
+            if (thisBark-lastBark > minBarkGap):
+		sessionStart=thisBark
         resetcount=0
         if debug: print "\t\tBlip",blipcount
-        if (blipcount>=beeplength):
+        if (barkcount>=barklength):
             blipcount=0
             resetcount=0
-            beepcount+=1
-            if debug: print "\tBeep",beepcount
+            lastBark=
+            if debug: print "\tBark",beepcount
             if (beepcount>=alarmlength):
                 clearcount=0
                 alarm=True

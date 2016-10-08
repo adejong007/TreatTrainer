@@ -10,30 +10,75 @@
 // Variables
 
   // Colors
-  $cPaper: 	#D5;
+  $cPaper: 	#D5D5D5;
   $cOvercast:	#9099A2;
   $cLavendar:	#6D7993;
   $cDusty:	#96858F;
+  $cFontBlack:  #0C0C0C;
+  $cWhite:	#FFFFFF; 
 
   // Dimensions
   $dTotal:	100%;
   $dContent:	800px;
 
   // Font sizes
-  $fVSmall: 	8px;
-  $fSmall:	10px;
-  $fMedium:	12px;
-  $fLarge:	16px;
-  $fVLarge:	20px;
+  $fVSmall: 	0.8em;
+  $fSmall:	1.0em;
+  $fMedium:	1.2em;
+  $fLarge:	2.0em;
+  $fVLarge:	3.0em;
 
 
 // General tags
 
 body,html 
 {
-    width: $dTotal;
+    width: 	$dTotal;
+    background: $cPaper;
+    color: 	$cFontBlack;
+}
+
+h1
+{
+    color: 	$cWhite;
+    font-size:	$fVLarge;
+    background: $cOvercast;
+    text-align: center;
+    padding: 30px 0;
+}
+
+p
+{
+    width: 	$dContent;
+    font-size:  $fMedium;
+    margin:	auto;
+}
+
+
+// Header
+#header
+{
+    font-size:	$fVLarge;
+    color:	$cWhite;
+    background:	$cLavendar;
+    height:	400px;
+    width:	100%;
+    display: 	table;
+
+    span
+    {
+	display:	table-cell;
+        vertical-align: middle;
+    }
 }
 
 
 
-
+// Footer
+#footer
+{
+    font-size: 	$fSmall;
+    text-align: center;
+    color:	$cWhite;
+    padding-top: 40px;
+}
