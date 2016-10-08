@@ -1,4 +1,9 @@
-s program is for educational purposes only and should never be used in any production or safety system
+#!/usr/bin/env python
+# This program is used to detect dog barking from a USB microphone
+# Copyright 2016, Andrew DeJong, andrew.dejong5@gmail.com
+# This software is is distributed under the terms of the full GNU General Public License
+#
+# Based on the alarmBeepDetector freely distributed by
 # Benjamin Chodroff benjamin.chodroff@gmail.com
 
 import pyaudio
@@ -11,9 +16,9 @@ from time import sleep
 #             1: Poorly sensitive, will only go off for relatively loud
 SENSITIVITY= 1
 # Alarm frequency (Hz) to detect (Set frequencyoutput to True if you need to detect what frequency to use)
-TONE = 3500
+TONE = 1500
 #Bandwidth for detection (i.e., detect frequencies +- within this margin of error of the TONE)
-BANDWIDTH = 30
+BANDWIDTH = 500
 #How many 46ms blips before we declare a beep? (Set frequencyoutput to True if you need to determine how many blips are found, then subtract some)
 beeplength=8
 # How many beeps before we declare an alarm? (Avoids false alarms)
@@ -23,18 +28,19 @@ resetlength=10
 # How many reset counts until we clear an active alarm? (Keep the alarm active even if we don't hear this many beeps)
 clearlength=30
 # Enable blip, beep, and reset debug output (useful for understanding when blips, beeps, and resets are being found)
-debug=False
+debug=True
 # Show the most intense frequency detected (useful for configuration of the frequency and beep lengths)
-frequencyoutput=False
+frequencyoutput=True
 
-
+print("Initialized.")
 # Audio Sampler
 NUM_SAMPLES = 2048
-SAMPLING_RATE = 44100
+SAMPLING_RATE = 48000
 pa = pyaudio.PyAudio()
 _stream = pa.open(format=pyaudio.paInt16,
                   channels=1, rate=SAMPLING_RATE,
                   input=True,
+                  input_device_index=2,
                   frames_per_buffer=NUM_SAMPLES)
 
 print("Alarm detector working. Press CTRL-C to quit.")
