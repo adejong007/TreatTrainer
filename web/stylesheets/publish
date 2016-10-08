@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# Preprocesses a specified Sass stylesheet (.scss) and publishes it to the web directory
+
+# Requires a filename
+die () {
+    echo >&2 "$@"
+    exit 1
+}
+[ "$#" -eq 1 ] || die "Usage: publish <Sass file>"
+
+
+publishDir=/var/www/html/style/
+filename="${1%.*}"
+
+#echo $filename.css
+sass $1 $publishDir$filename.css
+
+echo "  Published " $1 " to " $publishDir$filename.css

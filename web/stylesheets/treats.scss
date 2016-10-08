@@ -1,0 +1,39 @@
+/*******************************************************************************
+
+    Stylesheet for TreatTrainer
+
+    (c) 2016 Andrew DeJong
+    Preprocessed with Sass
+
+*******************************************************************************/
+
+// Variables
+
+  // Colors
+  $cPaper: 	#D5;
+  $cOvercast:	#9099A2;
+  $cLavendar:	#6D7993;
+  $cDusty:	#96858F;
+
+  // Dimensions
+  $dTotal:	100%;
+  $dContent:	800px;
+
+  // Font sizes
+  $fVSmall: 	8px;
+  $fSmall:	10px;
+  $fMedium:	12px;
+  $fLarge:	16px;
+  $fVLarge:	20px;
+
+
+// General tags
+
+body,html 
+{
+    width: $dTotal;
+}
+
+
+
+
