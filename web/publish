@@ -8,7 +8,7 @@ styleDir=$webDir/style
 
 cd $sourceDir
 # Copy web files (html directory)
-cp ./html/* $webDir
+cp -rf ./html/* $webDir
 
 # Preprocess Sass stylesheet into web directory
 # To make this easier, step into sass directory

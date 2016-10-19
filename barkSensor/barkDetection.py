@@ -10,20 +10,23 @@
 
 import pyaudio
 import sqlite3
+import wiringpi
 from numpy import zeros,linspace,short,fromstring,hstack,transpose,log
 from scipy import fft
-from time import sleep
+from time import time,sleep,perf_counter
 
 
-# BARK DETECTION VARIABLES
+# Noise Detection Variables
 #Volume Sensitivity, 0.05: Extremely Sensitive, may give false alarms
 #             0.1: Probably Ideal volume
 #             1: Poorly sensitive, will only go off for relatively loud
-SENSITIVITY= 1
+SENSITIVITY= 0.5
 # Alarm frequency (Hz) to detect (Set frequencyoutput to True if you need to detect what frequency to use)
 TONE = 1500
 #Bandwidth for detection (i.e., detect frequencies +- within this margin of error of the TONE)
 BANDWIDTH = 500
+
+# Bark Trainer Logic Variables
 #How many 46ms blips before we declare a bark?
 barklength=3
 # How many clear blips before we reset session detection
@@ -31,17 +34,23 @@ maxBarkGap=30
 # How long of consistent barking defines a session
 minSessionTime=10
 # How long of silense until session is over
-minQuiteTime=5
+resetlength=100
 # How long after a reward until another reward is possible
 rewardCooldown=300
-# How many false 46ms blips before we declare there are no more beeps? (May need to be increased if there are expected long pauses between beeps) 
-resetlength=10
-# How many reset counts until we clear an active alarm? (Keep the alarm active even if we don't hear this many beeps)
-clearlength=30
+
+# Servo control variables
+servoPin = 18
+servoRest = 0
+servoDump = 512
+wiringpi.wiringPiSetupGpio()
+wiringpi.pinMode(servoPin, 2)
+
+# Debugging variables
 # Enable blip, beep, and reset debug output (useful for understanding when blips, beeps, and resets are being found)
 debug=True
 # Show the most intense frequency detected (useful for configuration of the frequency and beep lengths)
 frequencyoutput=True
+
 
 print("Opening audio stream...")
 # Audio Sampler
@@ -55,26 +64,27 @@ _stream = pa.open(format=pyaudio.paInt16,
                   frames_per_buffer=NUM_SAMPLES)
 
 print("Opening SQLite database...")
-sqconn=sqlite3.connect('../web/db/barkActivity.db')
+sqconn=sqlite3.connect('/var/www/databases/barkActivity.db')
 sqcurs=sqconn.cursor()
 print("Last entry: ")
-for row in sqcurs.execute("SELECT * FROM sessions WHERE bdate = (SELECT MAX(bdate) FROM sessions) ORDER BY btime DESC LIMIT 1"):
+for row in sqcurs.execute("SELECT * FROM sessions ORDER BY datetime DESC LIMIT 1"):
     print(row)
-
 sqconn.close()
 
-print("Alarm detector working. Press CTRL-C to quit.")
+
+print("Bark detector working. Press CTRL-C to quit.")
 
 barkcount=0
 resetcount=0
-barkGap=0
+isQuiet=True
 inSession=False
-sessionStart=0
+sessionStart=perf_counter()
+sessionEnd=0
+sessionTime=0
+lastBark=sessionStart
+thisBark=sessionStart
 lastReward=0
-
-beepcount=0
-clearcount=0
-alarm=False
+wasRewarded=0
 
 while True:
     while _stream.get_read_available()< NUM_SAMPLES: sleep(0.01)
@@ -96,41 +106,53 @@ while True:
             thefreq = which*SAMPLING_RATE/NUM_SAMPLES
     if max(intensity[(frequencies < TONE+BANDWIDTH) & (frequencies > TONE-BANDWIDTH )]) > max(intensity[(frequencies < TONE-1000) & (frequencies > TONE-2000)]) + SENSITIVITY:
         if frequencyoutput:
-            print "\t\t\t\tfreq=",thefreq
-        barkcount+=1
-	#if this is the first blip, check barkgap
-        if resetcount!=0:
-            thisBark=time.perf_counter()
-	    #if gap is big, then this is the beginning of session
-            if (thisBark-lastBark > minBarkGap):
-		sessionStart=thisBark
+            print("\t\t\t\tfreq=",thefreq)
         resetcount=0
-        if debug: print "\t\tBlip",blipcount
-        if (barkcount>=barklength):
-            blipcount=0
-            resetcount=0
-            lastBark=
-            if debug: print "\tBark",beepcount
-            if (beepcount>=alarmlength):
-                clearcount=0
-                alarm=True
-                print "Alarm!"
-                beepcount=0
+        barkcount+=1
+        #if this is the first blip, record the start of this bark
+        if (barkcount == 1):
+            lastBark = thisBark
+            thisBark=perf_counter()
+        #if multiple blips, then this is a bark, not a false positive,
+        elif (barkcount>=barklength):
+            if debug: print("\tBark",barkcount)
+            #if gap is big, then this is the potential beginning of a new session
+            if (thisBark-lastBark > maxBarkGap):
+                sessionStart = thisBark
+            #if gap is small, and this has been going on for awhile, then this is a session
+            elif (thisBark - sessionStart > minSessionTime):
+                inSession=True
+                if debug: print("Barking Session!")
+    #If no sound detected
     else:
         if frequencyoutput:
-            print "\t\t\t\tfreq="
-        blipcount=0
-        resetcount+=1
-        if debug: print "\t\t\treset",resetcount
-        if (resetcount>=resetlength):
-            resetcount=0
-            beepcount=0
-            if alarm:
-                clearcount+=1
-                if debug: print "\t\tclear",clearcount
-                if clearcount>=clearlength:
-                    clearcount=0
-                    print "Cleared alarm!"
-                    alarm=False
-
+            print("\t\t\t\tfreq=")
+        barkcount=0
+        if debug: print("\t\t\treset",resetcount)
+        #if currently in a barking session
+        if inSession:
+            resetcount+=1
+            #if long quiet, end session
+            if (resetcount >= resetlength):
+                if debug: print("Cleared")
+                inSession = False
+                sessionEnd = perf_counter()
+                sessionTime = sessionEnd-sessionStart
+                #if no recent treat, give treat
+                if (sessionEnd-lastReward) > rewardCooldown:
+                    if debug: print("\tReward")
+                    wasRewarded = 1
+                    lastReward = sessionEnd
+                    #wiringpi.pwmWrite(servoPin, servoDump) # 50%
+                    #sleep(2)
+                    #wiringpi.pwmWrite(servoPin, servoRest) # 0%
+                else:
+                    wasRewarded=0
+                rows= [(int(time()),int(sessionTime),int(wasRewarded))]
+                for row in rows: 
+                    print(row)
+                    sqconn=sqlite3.connect('/var/www/databases/barkActivity.db', isolation_level=None)
+                    sqcurs=sqconn.cursor()
+                    sqcurs.execute('INSERT INTO sessions VALUES (?,?,?)',row)
+                    sqconn.close
     sleep(0.01)

@@ -10,25 +10,64 @@
 // Variables
 
   // Colors
-  $cPaper: 	#D5D5D5;
-  $cOvercast:	#9099A2;
-  $cLavendar:	#6D7993;
-  $cDusty:	#96858F;
+  $cPaper: 	#F5F5F5;
+  $cHighlight:	#AB987A;
+  $cBold:	#0F1626;
+  $cBright:	#FF533D;
   $cFontBlack:  #0C0C0C;
-  $cWhite:	#FFFFFF; 
+  $cWhite:	#F5F5F5; 
 
   // Dimensions
   $dTotal:	100%;
   $dContent:	800px;
+  $dHeader:	400px;
+  $dSmallScreen:500px;
 
   // Font sizes
   $fVSmall: 	0.8em;
   $fSmall:	1.0em;
   $fMedium:	1.2em;
-  $fLarge:	2.0em;
-  $fVLarge:	3.0em;
+  $fLarge:	3.0em;
+  $fVLarge:	5.0em;
 
-
+// Mixins
+// Linear Gradient Coloring
+@mixin linearGradient($top, $bottom){
+    background: $top; /* Old browsers */
+    background: -moz-linear-gradient(top,  $top 0%, $bottom 100%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,$top), color-stop(100%,$bottom)); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top,  $top 0%,$bottom 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top,  $top 0%,$bottom 100%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(top,  $top 0%,$bottom 100%); /* IE10+ */
+    background: linear-gradient(to bottom,  $top 0%,$bottom 100%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#000000',GradientType=0 ); /* IE6-9 */
+}
+// Border radius
+@mixin border-radius($radius) {
+    -webkit-border-radius: $radius;
+    border-radius: $radius;
+//    background-clip: padding-box;  /* stops bg color from leaking outside the border: */
+}
+@mixin border-TL-radius($radius) {
+    -webkit-border-top-left-radius: $radius;
+    border-top-left-radius: $radius;
+//    background-clip: padding-box;
+}
+@mixin border-TR-radius($radius) {
+    -webkit-border-top-right-radius: $radius;
+    border-top-right-radius: $radius;
+//    background-clip: padding-box;
+}
+@mixin border-BL-radius($radius) {
+    -webkit-border-bottom-left-radius: $radius;
+    border-bottom-left-radius: $radius;
+//    background-clip: padding-box;
+}
+@mixin border-BR-radius($radius) {
+    -webkit-border-bottom-right-radius: $radius;
+    border-bottom-right-radius: $radius;
+//    background-clip: padding-box;
+}
 // General tags
 
 body,html 
@@ -36,49 +75,213 @@ body,html
     width: 	$dTotal;
     background: $cPaper;
     color: 	$cFontBlack;
+    margin:     0;
+    font-family: 'Open Sans', sans-serif;
 }
 
 h1
 {
     color: 	$cWhite;
-    font-size:	$fVLarge;
-    background: $cOvercast;
+    font-size:	$fLarge;
+    background: $cHighlight;
     text-align: center;
-    padding: 30px 0;
+    padding: 	30px 0;
 }
 
 p
 {
-    width: 	$dContent;
     font-size:  $fMedium;
-    margin:	auto;
 }
+
+.content
+{
+    width: 	100%;
+    max-width: 	$dContent;
+    margin:	0 auto;
+}
+
 
 
 // Header
 #header
 {
-    font-size:	$fVLarge;
     color:	$cWhite;
-    background:	$cLavendar;
-    height:	400px;
+    background:	$cBold; 
+//    @include linearGradient($cBold,#414858);
     width:	100%;
-    display: 	table;
+    display:	inline-block; 
 
-    span
+    #picture
     {
-	display:	table-cell;
-        vertical-align: middle;
+	    background:	    url(../img/fitzFace.jpg) no-repeat center center;
+        background-size:cover;
+        height:		    $dHeader;
+        width:		    50%;
+        border-right:	5px $cPaper solid;
+        float:		    left;
+    }
+    
+    #title
+    {  
+        display:	inline-block;
+        line-height:	$dHeader;
+        vertical-align: middle; 
+        font-size:	$fVLarge;
+        text-align:     center;	
+        float:		left;
+        width:		49%;
+    }
+
+    @media all and (max-width: 900px){
+        #title
+        { 
+            font-size:	$fLarge;
+        }
+    }
+
+    @media all and (max-width: $dSmallScreen ) {
+        #picture{
+            width: 	100%;
+            border:	none;
+        }
+	#title{
+	    line-height:normal;
+	    width:      100%;
+	}
     }
 }
 
 
 
+// Navigation menu
+#menu
+{
+    text-align:	center;
+    margin:	40px auto;
+ 
+    a{
+	display:	inline-block;
+        width:		30%;
+        font-size:	$fLarge;
+	line-height:	$fLarge;
+        vertical-align: middle;
+        text-decoration:none;
+	color:		$cWhite;
+	background:	$cHighlight;
+        @include border-radius(5px);	
+    }
+    a:first-child {
+        margin-right:	4%;
+    }
+    a:last-child {
+        margin-left:  	4%;
+    }    
+    #current{
+        background:	$cBright;
+    }
+}
+
+
 // Footer
 #footer
 {
-    font-size: 	$fSmall;
-    text-align: center;
-    color:	$cWhite;
-    padding-top: 40px;
+    font-size: 		$fSmall;
+    text-align: 	center;
+    color:		$cWhite;
+    padding-top: 	40px;
 }
+
+
+
+// Table Styles
+#activity-table {
+  border-radius:	3px;
+  border-collapse: 	collapse;
+  padding:		5px;
+  box-shadow: 		0 5px 10px rgba(0, 0, 0, 0.2);
+  animation: 		float 5s infinite;
+ 
+  th {
+    color:		$cWhite;
+    background:		$cBold;
+    border-bottom:	4px solid $cPaper;
+    border-right: 	1px solid $cPaper;
+    font-size:		$fLarge;
+    font-weight: 	100;
+    padding:		24px;
+    text-align:		Center;
+    text-shadow: 	0 1px 1px rgba(0, 0, 0, 0.1);
+    vertical-align:	middle;
+  }
+
+  th:first-child {
+    @include border-TL-radius(10px);
+  }
+ 
+  th:last-child {
+    @include border-TR-radius(10px);
+    border-right:none;
+  }
+  
+  tr {
+    background: 	$cWhite;
+    border-top: 	1px solid $cPaper;
+    border-bottom: 	1px solid $cPaper;
+    color:		$cFontBlack;
+    font-size:		$fMedium;
+    font-weight:	normal;
+    text-align: 	center;
+    text-shadow: 	0 1px 1px rgba(256, 256, 256, 0.1);
+  }
+ 
+  tr:hover td {
+    background:		$cBold;
+    color:		$cWhite;
+  }
+ 
+  tr:first-child {
+    border-top:		none;
+  }
+
+  tr:last-child {
+    border-bottom:	none;
+  }
+ 
+  tr:nth-child(odd) td {
+    background:		$cHighlight;
+  }
+ 
+  tr:nth-child(odd):hover td {
+    background:		$cBold;
+  }
+
+  tr:last-child td:first-child {
+    @include border-BL-radius(10px);
+  }
+ 
+  tr:last-child td:last-child {
+    @include border-BR-radius(10px);
+  }
+ 
+  td {
+    background:		$cWhite;
+    padding:		20px;
+    text-align:		left;
+    vertical-align:	middle;
+    font-weight:	300;
+    font-size:		$fMedium;
+    text-align:		center;
+    text-shadow: 	-1px -1px 1px rgba(0, 0, 0, 0.1);
+    border-right: 	1px solid #C1C3D1;
+  }
+
+  td:last-child {
+    border-right: 	0px;
+  }
+  
+  td span{
+    color:      $cBright;
+  }
+}
+
+
