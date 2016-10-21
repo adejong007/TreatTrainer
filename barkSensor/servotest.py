@@ -18,25 +18,23 @@ from time import sleep,perf_counter
 
 # Servo control variables
 servoPin = 18
-servoRest = 0
-servoDump = 1024
+servoRest = 60
+servoDump = 110
 
 # Debugging variables
 # Enable blip, beep, and reset debug output (useful for understanding when blips, beeps, and resets are being found)
 debug=True
 # Show the most intense frequency detected (useful for configuration of the frequency and beep lengths)
-frequencyoutput=True
 wiringpi.wiringPiSetupGpio()
 wiringpi.pinMode(servoPin, 2)
 iter=0
-while (iter<5):
-    iter+=1
-    #hardware pwm
-    print("up")
-    wiringpi.pwmWrite(servoPin, servoDump) # 50%
+wiringpi.pwmSetMode(0)
+wiringpi.pwmSetClock(384)
+wiringpi.pwmSetRange(1000)
+for level in range(1,5):
+    wiringpi.pwmWrite(servoPin, servoRest) # 50%
     sleep(3)
-    print("\t\tdown")
-    wiringpi.pwmWrite(servoPin, servoRest) # 0%
+    wiringpi.pwmWrite(servoPin, servoDump) # 50%
     sleep(3)
 wiringpi.digitalWrite(servoPin,0)
 wiringpi.pinMode(servoPin,0)
