@@ -10,12 +10,17 @@
 // Variables
 
   // Colors
-  $cPaper: 	#F5F5F5;
+  $cPaper: 	    #F5F5F5;
   $cHighlight:	#AB987A;
-  $cBold:	#0F1626;
-  $cBright:	#FF533D;
+  $cBold:	    #0F1626;
+  $cBright:	    #FF533D;
+
   $cFontBlack:  #0C0C0C;
-  $cWhite:	#F5F5F5; 
+  $cWhite:	    #F5F5F5; 
+
+  $cOK:         #A2FF91;
+  $cWarning:    #FFD191;
+  $cError:      #FF9494;
 
   // Dimensions
   $dTotal:	100%;
@@ -86,6 +91,7 @@ h1
     background: $cHighlight;
     text-align: center;
     padding: 	30px 0;
+    margin-bottom: 40px;
 }
 
 p
@@ -160,26 +166,72 @@ p
     margin:	40px auto;
  
     a{
-	display:	inline-block;
-        width:		30%;
+        display:	inline-block;
+        width:		23%;
+        margin-right: 2%;
         font-size:	$fLarge;
-	line-height:	$fLarge;
+        line-height:	$fLarge;
         vertical-align: middle;
         text-decoration:none;
-	color:		$cWhite;
-	background:	$cHighlight;
+        color:		$cWhite;
+        background:	$cHighlight;
         @include border-radius(5px);	
-    }
-    a:first-child {
-        margin-right:	4%;
-    }
+   
+     }
+   
     a:last-child {
-        margin-left:  	4%;
+        margin-right:  	0;
     }    
     #current{
         background:	$cBright;
     }
 }
+
+// Status bar
+.status
+{
+    display:    block;   
+    width:      100%;
+    margin:     0 auto;
+    padding:    30px;
+
+    text-align: center;
+    height:     $fLarge;
+    line-height:$fLarge;
+
+    -webkit-box-shadow: inset 0px -15px 0px -8px rgba(0,0,0,0.2);
+    -moz-box-shadow: inset 0px -15px 0px -8px rgba(0,0,0,0.2);
+    box-shadow: inset 0px -15px 0px -8px rgba(0,0,0,0.2);
+
+    span
+    {
+        display: inline-block;
+        vertical-align: middle;
+    }
+    
+    .icon
+    {
+        font-size: $fLarge;
+        margin-right:30px;   
+    }
+
+}
+    .ok
+    {
+        background: $cOK;
+    }
+    
+    .recent
+    {
+        background: $cWarning;
+    }
+    
+    .barking
+    {
+        background: $cError;
+    }
+
+
 
 
 // Footer

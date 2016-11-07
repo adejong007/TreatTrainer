@@ -8,3 +8,4 @@
     <link rel="stylesheet" href="style/treats.css">
     <link rel="stylesheet" type="text/css" href="style/flaticon.css"> 
     <title>TreatTrainer: <?php echo $thisPage ?></title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.1/jquery.min.js"></script>

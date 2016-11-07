@@ -27,9 +27,13 @@
             $html = "";
 	    $result = $db->query('SELECT * FROM sessions ORDER BY datetime DESC');
             while(($row = $result->fetchArray())){
-              $datetime = $row['datetime'];
-              $date = date("D, d M", $datetime);
-              $time = date("h:i:s A", $datetime);
+              $timestamp = $row['datetime'];
+              //$date = date("D, d M", $timestamp);
+              //$time = date("h:i:s A", $datetime);
+              $datetime = new DateTime("@".$timestamp);
+              $datetime->setTimezone(new DateTimeZone('America/New_York'));
+              $time = $datetime->format("h:i:s A");
+              $date = $datetime->format("D, d M");
               $duration = number_format($row['duration'],0,"",",");
               $duration = ($duration > 60) ? gmdate("i:s",$duration) : gmdate(":s",$duration);
               $reward = "";
