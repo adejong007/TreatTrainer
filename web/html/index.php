@@ -14,8 +14,7 @@
       <?php include_once("menu.php"); ?>
       <h1>Current Status</h1>
 
-      <?php $statusfile =fopen("status",'r');
-            $status = fread($statusfile,filesize($statusfile));
+      <?php $status = file_get_contents('status');
             switch ($status) {
                 case 0:
                     echo '<div class="status ok"><span class="flaticon-success icon"></span><span>'.$name.' has not been barking</span></div>';
@@ -27,12 +26,11 @@
                     echo '<div class="status barking"><span class="flaticon-warning icon"></span><span>'.$name.' is currently barking</span></div>';
                     break;
                 default:
+                    echo '<div class="status empty"><span class="flaticon-minus icon"></span><span>The TreatTrainer is not running</span></div>';
                     break;
             }
       ?>
       <div class="content">
-
-
         <p> 
         <?php
 	    $Barkstop ='barkstop=True';
@@ -50,8 +48,8 @@
         $timestamp = $row['datetime'];
         $datetime = new DateTime("@".$timestamp);
         $datetime->setTimezone(new DateTimeZone('America/New_York'));
-        $time = $datetime->format("h:i:s A");
-        $date = $datetime->format("D, d M");
+        $time = $datetime->format("h:i A");
+        $date = $datetime->format("D, M d");
         $duration = number_format($row['duration'],0,"",",");
         $duration = ($duration > 60) ? gmdate("i:s",$duration) : gmdate(":s",$duration);
         $reward = "";
@@ -65,9 +63,9 @@
             $timestamp = $row['datetime'];
             $datetime = new DateTime("@".$timestamp);
             $datetime->setTimezone(new DateTimeZone('America/New_York'));
-            $time = $datetime->format("h:i:s A");
-            $date = $datetime->format("D, d M");
-            $status .= " The puppy's last reward was at ".$time." on ".$date.".";
+            $time = $datetime->format("h:i A");
+            $date = $datetime->format("D, M d");
+            $status .= " ".$name."'s last reward was at ".$time." on ".$date.".";
         }
 	    
         //Check if currently barking
@@ -77,10 +75,10 @@
         //Check if barking was today
             //else, check last session date, if = today, create notification of recent barking
         $notification ="";
-        date_default_timezone_set('America/New_Yotk');
+        date_default_timezone_set('America/New_York');
         $today = date("D, d M");
         if($date == $today){
-            $notification='<span id="notification-recent">His Holiness has been barking today!</span>';
+            $notification='<span id="notification-recent">'.$name.' has been barking today!</span>';
         }
 
         $html = $notification.$status;

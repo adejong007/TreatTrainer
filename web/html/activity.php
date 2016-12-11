@@ -25,7 +25,7 @@
 
 	    $db = new MyDB();
             $html = "";
-	    $result = $db->query('SELECT * FROM sessions ORDER BY datetime DESC');
+	    $result = $db->query('SELECT * FROM sessions ORDER BY datetime DESC LIMIT 20');
             while(($row = $result->fetchArray())){
               $timestamp = $row['datetime'];
               //$date = date("D, d M", $timestamp);

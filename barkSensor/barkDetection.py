@@ -27,28 +27,29 @@ from os import environ
 #Volume Sensitivity, 0.05: Extremely Sensitive, may give false alarms
 #             0.1: Probably Ideal volume
 #             1: Poorly sensitive, will only go off for relatively loud
-SENSITIVITY= 0.2
+SENSITIVITY= 0.15
 # Alarm frequency (Hz) to detect (Set frequencyoutput to True if you need to detect what frequency to use)
-TONE = 1500
+TONE = 1100
 #Bandwidth for detection (i.e., detect frequencies +- within this margin of error of the TONE)
-BANDWIDTH = 500
+BANDWIDTH = 900
 
 # Bark Trainer Logic Variables
 #How many 46ms blips before we declare a bark?
-barklength=3
-# How many clear blips in between barks clears the session test
-maxBarkGap=7
+barkLength=3
+# How many seconds in between barks clears the session test
+clearGap=6
 # How long of consistent barking defines a session
-minSessionTime=30
+minSessionTime=15
 # How long of silense until session is over
-resetlength=100
+resetTime=6
 # How long after a reward until another reward is possible
 rewardCooldown=300
 
 # Servo control variables
 servoPin = 18
-servoRest = 60
-servoDump = 110
+servoRest = 61
+servoDump = 85
+servoTime = .2
 
 # LED control variables
 redPin = 16
@@ -59,9 +60,9 @@ ledOFF = 0
 
 # Debugging variables
 # Enable blip, beep, and reset debug output (useful for understanding when blips, beeps, and resets are being found)
-debug=True
+debug=False
 # Show the most intense frequency detected (useful for configuration of the frequency and beep lengths)
-frequencyoutput=True
+frequencyoutput=False
 
 
 #-------------------------------------------------------------------------------------
@@ -70,6 +71,7 @@ frequencyoutput=True
 #
 #-------------------------------------------------------------------------------------
 
+    
 # Functions
 def led(color):
     wiringpi.digitalWrite(redPin,ledOFF)
@@ -78,6 +80,25 @@ def led(color):
     if(color=='red'): wiringpi.digitalWrite(redPin,ledON)
     if(color=='green'): wiringpi.digitalWrite(greenPin,ledON)
     if(color=='blue'): wiringpi.digitalWrite(bluePin,ledON)
+
+def setStatus(value):
+    f = open('status','w')
+    f.write(str(value))
+    f.close()
+
+def reward():
+    wiringpi.pwmWrite(servoPin, servoDump) # Dump position
+    sleep(servoTime)
+    wiringpi.pwmWrite(servoPin, servoRest) # Rest position
+
+def log(tStart,tDuration,bReward):
+    rows= [(int(tStart),int(tDuration),int(bReward))]
+    for row in rows: 
+        if(debug): print(row)
+        sqconn=sqlite3.connect('/var/www/databases/barkActivity.db', isolation_level=None)
+        sqcurs=sqconn.cursor()
+        sqcurs.execute('INSERT INTO sessions VALUES (?,?,?)',row)
+        sqconn.close
 
 
 
@@ -100,6 +121,7 @@ wiringpi.pinMode(servoPin, 2)
 wiringpi.pwmSetMode(0)
 wiringpi.pwmSetClock(384)
 wiringpi.pwmSetRange(1000)
+wiringpi.pwmWrite(servoPin, servoRest) # Rest position
 
 print("Opening SQLite database...")
 sqconn=sqlite3.connect('/var/www/databases/barkActivity.db')
@@ -111,12 +133,9 @@ sqconn.close()
 
 print("Writing parameter files...")
 f = open('messages.sh','w')
-f.write('barkstop=False')
+f.write("barkstop=False\n")
 f.close()
-f = open('status','w')
-f.write('0')
-f.close()
-
+setStatus(0)
 
 print("Opening audio stream...")
 # Audio Sampler
@@ -130,20 +149,21 @@ _stream = pa.open(format=pyaudio.paInt16,
                   frames_per_buffer=NUM_SAMPLES)
 
 print("Bark detector working. Press CTRL-C to quit.")
+
 now=perf_counter()
-barkcount=0
-resetcount=0
-isQuiet=True
+barkCount=0
+barkStart=0
+thisBark=0
+lastBark=0
 inSession=False
+resetCount=0
+resetStart=now
 sessionStart=now
 sessionEnd=0
-sessionTime=0
-lastBark=now
-barkStart=now
-thisBark=now
 lastReward=0
 wasRewarded=0
 
+rewardNow=False
 
 #-------------------------------------------------------------------------------------
 #
@@ -162,6 +182,15 @@ while not barkstop:
     with open('./messages.sh') as messageFile:
         exec(messageFile.read())
  
+    # If reward now was set to true in messages.sh, drop a treat
+    if(rewardNow):
+        reward()
+        log(time(),0,True)
+        f = open('messages.sh','w')
+        f.write("barkstop=False \n")
+        f.close()
+        rewardNow=False
+
     # Get audio samples
     nAvailable = _stream.get_read_available()
     if(nAvailable < NUM_SAMPLES):
@@ -194,63 +223,66 @@ while not barkstop:
     if max(intensity[(frequencies < TONE+BANDWIDTH) & (frequencies > TONE-BANDWIDTH )]) > max(intensity[(frequencies < TONE-1000) & (frequencies > TONE-2000)]) + SENSITIVITY:
         if frequencyoutput:
             print("\t\t\t\tfreq=",thefreq)
-        resetcount=0
-        barkcount+=1
+        clearStart = now
+        barkCount+=1
         #if not currently in a session, determine if this is a real bark
         if not inSession:
             led('blue')
             #if this is the first blip, record the start of this bark
-            if (barkcount == 1):
+            #    barckCount tracks consequtive blips with noise
+            #    barkStart is the time when the current noise started
+            #    thisBark is the time when the current bark started
+            #    lastBark is the time when the previous bark started
+            if (barkCount == 1):
+                #if there was another bark, then step forward
                 lastBark = thisBark
+                #save current time incase this is a bark
                 barkStart = now
             #if multiple blips, then this is a bark, not a false positive,
-            elif (barkcount>=barklength):
+            elif (barkCount>=barkLength):
+                #record starting time as a bark
                 thisBark = barkStart
-                if debug: print("\tBark",barkcount)
+                if debug: print("\t \t Bark",barkCount)
                 #if gap is big, then this is the potential beginning of a new session
-                if (thisBark-lastBark > maxBarkGap):
+                if (thisBark-lastBark > clearGap):
+                    if debug: print("\t Cleared")
                     sessionStart = thisBark
                 #if gap is small, and this has been going on for awhile, then this is a session
                 elif (thisBark - sessionStart > minSessionTime):
                     led('red')
                     inSession=True
+                    resetStart = now
                     if debug: print("Barking Session!")
+                    setStatus(2)
+        #If barking in session
+        else:
+            resetStart = now
 
     # If no sound detected
     else:
-        if frequencyoutput:
-            print("\t\t\t\tfreq=")
-        barkcount=0
+        barkCount=0
         #if currently in a barking session
         if inSession:
-            resetcount+=1
-            if debug: print("\t\t\treset",resetcount)
+            resetCount = now - resetStart
+            if debug: print("\t \t Reset",resetCount)
             #if long quiet, end session
-            if (resetcount >= resetlength):
+            if (resetCount >= resetTime):
                 led('green')
-                if debug: print("Cleared")
+                if debug: print("Session Reset")
                 inSession = False
+                setStatus(1)
                 sessionEnd = now
                 sessionTime = sessionEnd-sessionStart
                 #if no recent treat, give treat
                 if (sessionEnd-lastReward) > rewardCooldown:
                     if debug: print("\tReward")
+                    reward()
                     wasRewarded = 1
                     lastReward = sessionEnd
-                    wiringpi.pwmWrite(servoPin, servoDump) # Dump position
-                    sleep(0.5)
-                    wiringpi.pwmWrite(servoPin, servoRest) # Rest position
                 else:
                     wasRewarded=0
-                rows= [(int(time()),int(sessionTime),int(wasRewarded))]
-                for row in rows: 
-                    print(row)
-                    sqconn=sqlite3.connect('/var/www/databases/barkActivity.db', isolation_level=None)
-                    sqcurs=sqconn.cursor()
-                    sqcurs.execute('INSERT INTO sessions VALUES (?,?,?)',row)
-                    sqconn.close
+                log(time(),sessionTime,wasRewarded)
         else:
-            resetcount = 0
             led('green')            
     sleep(0.01)
 
@@ -264,6 +296,8 @@ while not barkstop:
 # Stop PWM
 wiringpi.digitalWrite(servoPin,0)
 wiringpi.pinMode(servoPin,0)
+
+setStatus(9)
 
 for letter in "goodbye":
     led('red')

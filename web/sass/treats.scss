@@ -15,6 +15,7 @@
   $cBold:	    #0F1626;
   $cBright:	    #FF533D;
 
+  $cGrayBack:   #E0E0E0;
   $cFontBlack:  #0C0C0C;
   $cWhite:	    #F5F5F5; 
 
@@ -34,6 +35,15 @@
   $fMedium:	1.2em;
   $fLarge:	3.0em;
   $fVLarge:	5.0em;
+
+  @media screen and (max-width: 900px) {
+    $fVSmall: 	1.0em;
+    $fSmall:	2.0em;
+    $fMedium:	3.0em;
+    $fLarge:	4.0em;
+    $fVLarge:	5.0em;
+  }
+
 
 // Mixins
 // Linear Gradient Coloring
@@ -193,7 +203,7 @@ p
     display:    block;   
     width:      100%;
     margin:     0 auto;
-    padding:    30px;
+    padding:    30px 0;
 
     text-align: center;
     height:     $fLarge;
@@ -230,9 +240,52 @@ p
     {
         background: $cError;
     }
+    
+    .empty
+    {
+        background: $cGrayBack;
+    }
 
+// Controlsi
+#controls
+{
+    text-align:center;
 
+    .control
+    {
+        display:	inline-block;
+        width:		23%;
+        margin-right: 2%;
+        font-size:	$fLarge;
+        line-height:	$fLarge;
+        vertical-align: middle;
+        text-decoration:none;
+        color:		$cWhite;
+        background:	$cHighlight;
+        @include border-radius(5px);	
+        
+        -webkit-box-shadow: inset 5px 5px 0px -8px rgba(0,0,0,0.2);
+        -moz-box-shadow: inset 5px 5px 0px -8px rgba(0,0,0,0.2);
+        box-shadow: inset 5px 5px 0px -8px rgba(0,0,0,0.2);
 
+        &:hover
+        {
+            background: $cBold;
+            
+            -webkit-box-shadow: inset -5px -5px 0px -8px rgba(0,0,0,0.2);
+            -moz-box-shadow: inset -5px -5px 0px -8px rgba(0,0,0,0.2);
+            box-shadow: inset -5px -5px 0px -8px rgba(0,0,0,0.2);
+            
+        }
+    }
+}
+
+#message
+{
+    display:    none;
+    background: $cBright;
+    margin-bottom:  40px;
+}
 
 // Footer
 #footer
