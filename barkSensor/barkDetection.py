@@ -15,6 +15,7 @@ from numpy import zeros,linspace,short,fromstring,hstack,transpose,log
 from scipy import fft
 from time import time,sleep,perf_counter
 from subprocess import call
+from datetime import date
 from os import environ
 
 #-------------------------------------------------------------------------------------
@@ -37,11 +38,11 @@ BANDWIDTH = 900
 #How many 46ms blips before we declare a bark?
 barkLength=3
 # How many seconds in between barks clears the session test
-clearGap=6
+clearGap=8
 # How long of consistent barking defines a session
-minSessionTime=15
+minSessionTime=600
 # How long of silense until session is over
-resetTime=6
+resetTime=10
 # How long after a reward until another reward is possible
 rewardCooldown=300
 
@@ -58,9 +59,12 @@ bluePin = 20
 ledON = 1
 ledOFF = 0
 
+# barkBit settings
+bitFreq = 10
+
 # Debugging variables
 # Enable blip, beep, and reset debug output (useful for understanding when blips, beeps, and resets are being found)
-debug=False
+debug=True
 # Show the most intense frequency detected (useful for configuration of the frequency and beep lengths)
 frequencyoutput=False
 
@@ -100,7 +104,11 @@ def log(tStart,tDuration,bReward):
         sqcurs.execute('INSERT INTO sessions VALUES (?,?,?)',row)
         sqconn.close
 
-
+def barkBit(count):
+    filename=date.today().strftime("%Y%m%d")+".bit"
+    with open(filename, "a") as bitFile:
+        bitFile.write(str(count)+"\n")
+    if(debug): print(" barkBit updating file "+filename+": "+str(count))
 
 print("------------------------------------------------------------")
 print("                        BarkDetector                        ")
@@ -143,7 +151,7 @@ NUM_SAMPLES = 1024
 SAMPLING_RATE = 24000
 pa = pyaudio.PyAudio()
 _stream = pa.open(format=pyaudio.paInt16,
-                  channels=1, rate=SAMPLING_RATE,
+                   channels=1, rate=SAMPLING_RATE,
                   input=True,
                   input_device_index=2,
                   frames_per_buffer=NUM_SAMPLES)
@@ -159,9 +167,13 @@ inSession=False
 resetCount=0
 resetStart=now
 sessionStart=now
+sessionTime=time()
 sessionEnd=0
 lastReward=0
 wasRewarded=0
+
+bitTime=now
+bitCount=0
 
 rewardNow=False
 
@@ -190,6 +202,12 @@ while not barkstop:
         f.write("barkstop=False \n")
         f.close()
         rewardNow=False
+    
+    # If 5 minute barkBit time has passed, save count
+    if(now - bitTime > bitFreq):
+        bitTime += bitFreq
+        barkBit(bitCount)
+        bitCount = 0    
 
     # Get audio samples
     nAvailable = _stream.get_read_available()
@@ -240,6 +258,8 @@ while not barkstop:
                 barkStart = now
             #if multiple blips, then this is a bark, not a false positive,
             elif (barkCount>=barkLength):
+                #count barks for the barkBit                 
+                bitCount += 1
                 #record starting time as a bark
                 thisBark = barkStart
                 if debug: print("\t \t Bark",barkCount)
@@ -247,6 +267,7 @@ while not barkstop:
                 if (thisBark-lastBark > clearGap):
                     if debug: print("\t Cleared")
                     sessionStart = thisBark
+                    sessionTime = time()
                 #if gap is small, and this has been going on for awhile, then this is a session
                 elif (thisBark - sessionStart > minSessionTime):
                     led('red')
@@ -272,7 +293,7 @@ while not barkstop:
                 inSession = False
                 setStatus(1)
                 sessionEnd = now
-                sessionTime = sessionEnd-sessionStart
+                sessionDur = sessionEnd-sessionStart
                 #if no recent treat, give treat
                 if (sessionEnd-lastReward) > rewardCooldown:
                     if debug: print("\tReward")
@@ -281,7 +302,7 @@ while not barkstop:
                     lastReward = sessionEnd
                 else:
                     wasRewarded=0
-                log(time(),sessionTime,wasRewarded)
+                log(sessionTime,sessionDur,wasRewarded)
         else:
             led('green')            
     sleep(0.01)
@@ -299,12 +320,12 @@ wiringpi.pinMode(servoPin,0)
 
 setStatus(9)
 
-for letter in "goodbye":
+for letter in "bye":
     led('red')
     print(letter)
-    sleep(0.5)
+    sleep(0.25)
     led('off')
-    sleep(0.5)
+    sleep(0.25)
 
 
 
