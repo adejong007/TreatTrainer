@@ -28,7 +28,7 @@ from os import environ
 #Volume Sensitivity, 0.05: Extremely Sensitive, may give false alarms
 #             0.1: Probably Ideal volume
 #             1: Poorly sensitive, will only go off for relatively loud
-SENSITIVITY= 0.15
+SENSITIVITY= 0.25
 # Alarm frequency (Hz) to detect (Set frequencyoutput to True if you need to detect what frequency to use)
 TONE = 1100
 #Bandwidth for detection (i.e., detect frequencies +- within this margin of error of the TONE)
@@ -60,7 +60,9 @@ ledON = 1
 ledOFF = 0
 
 # barkBit settings
-bitFreq = 10
+bitFreq = 60
+bitFilename=date.today().strftime("%Y%m%d")+".bit"
+
 
 # Debugging variables
 # Enable blip, beep, and reset debug output (useful for understanding when blips, beeps, and resets are being found)
@@ -105,10 +107,10 @@ def log(tStart,tDuration,bReward):
         sqconn.close
 
 def barkBit(count):
-    filename=date.today().strftime("%Y%m%d")+".bit"
-    with open(filename, "a") as bitFile:
+    with open(bitFilename, "a") as bitFile:
         bitFile.write(str(count)+"\n")
-    if(debug): print(" barkBit updating file "+filename+": "+str(count))
+    if(debug): print(" barkBit updating file "+bitFilename+": "+str(count))
+
 
 print("------------------------------------------------------------")
 print("                        BarkDetector                        ")
@@ -138,6 +140,19 @@ print("Last entry: ")
 for row in sqcurs.execute("SELECT * FROM sessions ORDER BY datetime DESC LIMIT 1"):
     print(row)
 sqconn.close()
+
+print("Saving barkBit file name...")
+# Save bitFilename is db, if not already there
+intDate= int(date.today().strftime("%Y%m%d"))
+sqconn=sqlite3.connect('/var/www/databases/barkActivity.db', isolation_level=None)
+sqcurs=sqconn.cursor()
+sqcurs.execute("SELECT count(*) FROM barkBitFiles WHERE date = ?", (intDate,))
+if(sqcurs.fetchone()[0]==0):
+    rows= [(intDate,bitFilename)]
+    for row in rows: 
+        if(debug): print(row)
+        sqcurs.execute('INSERT INTO barkBitFiles VALUES (?,?)',(intDate,bitFilename))
+        sqconn.close
 
 print("Writing parameter files...")
 f = open('messages.sh','w')
@@ -203,7 +218,7 @@ while not barkstop:
         f.close()
         rewardNow=False
     
-    # If 5 minute barkBit time has passed, save count
+    # If barkBit interval time has passed, save count
     if(now - bitTime > bitFreq):
         bitTime += bitFreq
         barkBit(bitCount)

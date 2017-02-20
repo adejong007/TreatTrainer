@@ -37,11 +37,11 @@
   $fVLarge:	5.0em;
 
   @media screen and (max-width: 900px) {
-    $fVSmall: 	1.0em;
-    $fSmall:	2.0em;
-    $fMedium:	3.0em;
-    $fLarge:	4.0em;
-    $fVLarge:	5.0em;
+    $fVSmall: 	2.0em;
+    $fSmall:	3.0em;
+    $fMedium:	4.0em;
+    $fLarge:	5.0em;
+    $fVLarge:	6.0em;
   }
 
 
@@ -124,7 +124,7 @@ p
     color:	$cWhite;
     background:	$cBold; 
 //    @include linearGradient($cBold,#414858);
-    width:	100%;
+    width:	$dTotal;
     display:	inline-block; 
 
     #picture
@@ -246,7 +246,7 @@ p
         background: $cGrayBack;
     }
 
-// Controlsi
+// Controls
 #controls
 {
     text-align:center;
@@ -286,6 +286,64 @@ p
     background: $cBright;
     margin-bottom:  40px;
 }
+
+// BarkBit
+
+.barkBitEntry
+{
+    @extend .content;
+    padding: 20px;
+    margin:30px auto;
+    background: $cGrayBack;
+
+
+    .title
+    {
+        color: $cFontBlack;
+        font-size: $fMedium;          
+        display:block;
+    }
+    
+    .barkBar
+    {
+            padding: 0;
+            margin: 15px 0 0 0;   
+ 
+        .barkBit
+        {
+            width: 1px;
+            border-bottom: 1px solid $cFontBlack;
+            display: inline-block;
+            //position: relative;
+            padding: 0;
+            margin: 0;   
+        } 
+        .none
+        {
+            @extend .barkBit;
+            height: 0px;
+        }
+        .low
+        {
+            @extend .barkBit;
+            background: $cHighlight;
+            height: 10px;
+        }
+        .mid
+        {
+            @extend .barkBit;
+            background: $cBold;
+            height: 30px;
+        }
+        .high
+        {
+            @extend .barkBit;
+            background: $cBright;
+            height: 60px;
+        }
+    }
+}
+
 
 // Footer
 #footer
